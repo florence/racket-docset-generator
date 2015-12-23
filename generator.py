@@ -20,9 +20,40 @@ def fetch(f):
     page = open(filename).read()
     soup = BeautifulSoup(page)
 
+    for group in soup.select(".defmodule"):
+        _type = "Module"
+        _path = filename.replace(docpath, '')
+        for tag in group.select(".RktModLink"):
+            _name = tag.text
+            print('type: %s, name: %s, path: %s' % (_type, _name, _path))
+            cur.execute('INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)', (_name, _type, _path))
+
+    for group in soup.select('.tocviewtitle'):
+        for tag in group.select('.tocviewselflink'):
+            _type = "Guide"
+            if tag['href'] == '':
+                _path = filename.replace(docpath, '')
+                _name = tag.text
+                print('type: %s, name: %s, path: %s' % (_type, _name, _path))
+                cur.execute('INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)', (_name, _type, _path))
+
+
     for group in soup.select('.SVInsetFlow'):
         type_ele = group.find('div', { 'class': 'RBackgroundLabelInner' })
         _path = None
+
+
+        for tag in group.select('.RktStxDef'):
+            _name = tag.text
+            if tag['href'].startswith('#'):
+                _path = filename.replace(docpath, '') + tag['href']
+            elif 'local-redirect' in tag['href']:
+                matches = re.search('doc=(.*)&rel=(.*)', tag['href'])
+                _path = matches.group(1) + '/' + parse.unquote(matches.group(2))
+
+            if _path:
+                print('type: %s, name: %s, path: %s' % ("Syntax", _name, _path))
+                cur.execute('INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)', (_name, "Syntax", _path))
 
         if type_ele:
             _type = type_ele.text

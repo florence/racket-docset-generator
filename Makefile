@@ -9,7 +9,7 @@ copy:
 		(copy-directory/files (~a (find-doc-dir)) "racket.docset/Contents/Resources/Documents")'
 
 generate:
-	python generator.py
+	python3 generator.py
 
 compress:
 	tar --exclude='.DS_Store' -cvzf Racket.tgz Racket.docset
